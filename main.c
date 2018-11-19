@@ -33,7 +33,7 @@ int get_not_opr_len(char *in, int ilen, char **out)
     olen = 0;
 
     /* calculate length */
-    while ( pstart < in + ilen) {
+    while ( (pstart + olen) < in + ilen) {
         if (*(pstart + olen) == '&' 
                 || *(pstart + olen) == '|' 
                 || *(pstart + olen) == '!') {
@@ -50,9 +50,9 @@ int get_not_opr_len(char *in, int ilen, char **out)
     return olen;
 }
 
-
-int process_not_opr(char *data, int dlen)
+int process_and_or_opr(char *data, int dlen)
 {
+#if 0
     int rule_id;
     char *opr;
     int i;
@@ -67,7 +67,7 @@ int process_not_opr(char *data, int dlen)
         return -1;
     }
 
-    fprintf(stderr, "data:[%s] dlen:[%d]\n", data, dlen);
+    fprintf(stderr, "%s:%d data:[%s] dlen:[%d]\n", __func__, __LINE__, data, dlen);
 
     /* calculate ! */
     for (i = 0; i < dlen; i++) {
@@ -89,17 +89,81 @@ int process_not_opr(char *data, int dlen)
         out = NULL;
         mmb_len = get_not_opr_len(start, dlen - i, &out);
 
-        /* TODO: trim */
         if (mmb_len > 0) {
             memset(mmb, 0, sizeof(mmb));
             memcpy(mmb, out, mmb_len);
             fprintf(stderr, "mmb_len:[%d] mmb:[%s] pos:[%s]\n", mmb_len, mmb, start);
         }
     }
+#endif
 
     return 0;
 }
 
+static int get_result_by_rule(const char *rule_id, int len)
+{
+    char rule_str[BUFSIZ] = {0};
+    int id = 0;
+
+    memcpy(rule_str, rule_id, len);
+
+    id = atoi(rule_str) % 2;
+
+    return id;
+}
+
+int process_not_opr(char *data, int dlen)
+{
+    int rule_id;
+    char *opr;
+    int i;
+    char mmb[BUFSIZ] = {0};
+    int mmb_len = 0;
+
+    char *pos = data;
+    char *start = NULL;
+    char *out = NULL;
+    int rule_result = 0;
+
+    if (data == NULL || dlen == 0) {
+        return -1;
+    }
+
+    fprintf(stderr, "%s:%d data:[%s] dlen:[%d]\n", __func__, __LINE__, data, dlen);
+
+    /* calculate ! */
+    for (i = 0; i < dlen; i++) {
+        /* 先计算 ! 的表达式 */
+        if (*(pos + i) != '!') {
+            continue;
+        }
+
+        if (*(pos + i) == ' ') {
+            continue;
+        }
+
+        /* i是最后一个字符 */
+        if (i == dlen - 1) {
+            continue;
+        }
+
+        start = pos + i;
+        out = NULL;
+        mmb_len = get_not_opr_len(start, dlen - i, &out);
+
+        if (mmb_len > 0) {
+            memset(mmb, 0, sizeof(mmb));
+            memcpy(mmb, out, mmb_len);
+
+            rule_result = get_result_by_rule(mmb, mmb_len);
+            fprintf(stderr, "mmb_len:[%d] mmb:[%s] pos:[%s] rc:[%d]\n", mmb_len, mmb, start, rule_result);
+        }
+
+
+    }
+
+    return 0;
+}
 
 int main()
 {
@@ -109,6 +173,7 @@ int main()
     process_not_opr(data, strlen(data));
 
     /* process 'and opr' && 'or opt' */
+    process_and_or_opr(data, strlen(data));
 
     return 0;
 }
