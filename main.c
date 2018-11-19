@@ -50,18 +50,27 @@ int get_not_opr_len(char *in, int ilen, char **out)
     return olen;
 }
 
+static int get_result_by_rule(const char *rule_id, int len)
+{
+    char rule_str[BUFSIZ] = {0};
+    int id = 0;
+
+    memcpy(rule_str, rule_id, len);
+
+    id = atoi(rule_str) % 2;
+
+    return id;
+}
+
 int process_and_or_opr(char *data, int dlen)
 {
-#if 0
-    int rule_id;
+    int rule_id = 0, i = 0, mmb_len = 0;
     char *opr;
-    int i;
-    char mmb[BUFSIZ] = {0};
-    int mmb_len = 0;
-
     char *pos = data;
+    char mmb[BUFSIZ] = {0};
     char *start = NULL;
     char *out = NULL;
+    int rule_result = 0;
 
     if (data == NULL || dlen == 0) {
         return -1;
@@ -92,24 +101,15 @@ int process_and_or_opr(char *data, int dlen)
         if (mmb_len > 0) {
             memset(mmb, 0, sizeof(mmb));
             memcpy(mmb, out, mmb_len);
-            fprintf(stderr, "mmb_len:[%d] mmb:[%s] pos:[%s]\n", mmb_len, mmb, start);
+
+            rule_result = get_result_by_rule(mmb, mmb_len);
+            fprintf(stderr, "mmb_len:[%d] mmb:[%s] pos:[%s] rc:[%d]\n", mmb_len, mmb, start, rule_result);
         }
+
+
     }
-#endif
 
     return 0;
-}
-
-static int get_result_by_rule(const char *rule_id, int len)
-{
-    char rule_str[BUFSIZ] = {0};
-    int id = 0;
-
-    memcpy(rule_str, rule_id, len);
-
-    id = atoi(rule_str) % 2;
-
-    return id;
 }
 
 int process_not_opr(char *data, int dlen)
@@ -155,8 +155,13 @@ int process_not_opr(char *data, int dlen)
             memset(mmb, 0, sizeof(mmb));
             memcpy(mmb, out, mmb_len);
 
+            char mmb_id[BUFSIZ] = {0};
             rule_result = get_result_by_rule(mmb, mmb_len);
-            fprintf(stderr, "mmb_len:[%d] mmb:[%s] pos:[%s] rc:[%d]\n", mmb_len, mmb, start, rule_result);
+
+            snprintf(mmb_id, sizeof(mmb_id) - 1, "%d", !rule_result);
+             
+            fprintf(stderr, "mmb_len:[%d] mmb:[%s] pos:[%s] rc:[%d] mmb_id:[%d]\n", 
+                    mmb_len, mmb, start, rule_result, mmb_id);
         }
 
 
