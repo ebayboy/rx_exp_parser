@@ -6,11 +6,18 @@
 int get_not_opr_len(char *in, int ilen, char **out)
 {
     int olen = 0;
-    char *pstart = in;
+    char *pstart = NULL;
 
     if (in == NULL || ilen <= 0) {
         return 0;
     }
+
+    if (*in != '!') {
+        return -1;
+    }
+
+    /* continue ! */
+    pstart = in + 1;
 
     /* move to start pos */
     while (pstart < in + ilen) {
@@ -28,8 +35,8 @@ int get_not_opr_len(char *in, int ilen, char **out)
     /* calculate length */
     while ( pstart < in + ilen) {
         if (*(pstart + olen) == '&' 
-                || *(in + olen) == '|' 
-                || *(in + olen) == '!') {
+                || *(pstart + olen) == '|' 
+                || *(pstart + olen) == '!') {
             break;
         }
 
@@ -80,7 +87,7 @@ int process_not_opr(char *data, int dlen)
 
         start = pos + i;
         out = NULL;
-        mmb_len = get_not_opr_len(start + 1, dlen - i, &out);
+        mmb_len = get_not_opr_len(start, dlen - i, &out);
 
         /* TODO: trim */
         if (mmb_len > 0) {
