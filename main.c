@@ -172,7 +172,8 @@ int process_not_opr(char *data, int dlen)
 
 int main()
 {
-    char *data = "!30001 | 30004 & 30005 | ! 30006 & 30003 | ! 30002";
+    char *data = "30002 & !30003 | 30004 & 30005 | !30006";
+   // "!30001 | 30004 & 30005 | ! 30006 & 30003 | ! 30002";
 
     /* process not opr */
     process_not_opr(data, strlen(data));
