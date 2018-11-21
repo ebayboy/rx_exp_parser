@@ -155,16 +155,24 @@ int process_not_opr(char *data, int dlen)
             memset(mmb, 0, sizeof(mmb));
             memcpy(mmb, out, mmb_len);
 
-            char mmb_id[BUFSIZ] = {0};
+            /* 将源字符串替换成结果字符串 */
+            char mmb_id[512] = {0};
             rule_result = get_result_by_rule(mmb, mmb_len);
 
-            snprintf(mmb_id, sizeof(mmb_id) - 1, "%d", !rule_result);
-             
-            fprintf(stderr, "mmb_len:[%d] mmb:[%s] pos:[%s] rc:[%d] mmb_id:[%d]\n", 
-                    mmb_len, mmb, start, rule_result, mmb_id);
+            snprintf(mmb_id, sizeof(mmb_id) - 1, "%*d", mmb_len + 1, !rule_result);
+
+#if 0
+            printf("mmb:[%s] mmb_id:[%s] mmb_id_len:[%d] start:[%s] mmb_len:[%d]\n",
+                    mmb, mmb_id, strlen(mmb_id), start, mmb_len);
+#endif
+
+            printf("mmb:[%s]\n", mmb);
+            printf("before data:[%s]\n", data);
+
+            memcpy(start, mmb_id, mmb_len + (out - start));
+
+            printf("after  data:[%s]\n", data);
         }
-
-
     }
 
     return 0;
@@ -172,7 +180,7 @@ int process_not_opr(char *data, int dlen)
 
 int main()
 {
-    char *data = "30002 & !30003 | 30004 & 30005 | !30006";
+    char data[1024] = "30002 & !30003 | 30004 & 30005 | !30006";
    // "!30001 | 30004 & 30005 | ! 30006 & 30003 | ! 30002";
 
     /* process not opr */
