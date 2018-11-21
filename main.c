@@ -161,11 +161,6 @@ int process_not_opr(char *data, int dlen)
 
             snprintf(mmb_id, sizeof(mmb_id) - 1, "%*d", mmb_len + 1, !rule_result);
 
-#if 0
-            printf("mmb:[%s] mmb_id:[%s] mmb_id_len:[%d] start:[%s] mmb_len:[%d]\n",
-                    mmb, mmb_id, strlen(mmb_id), start, mmb_len);
-#endif
-
             printf("mmb:[%s]\n", mmb);
             printf("before data:[%s]\n", data);
 
