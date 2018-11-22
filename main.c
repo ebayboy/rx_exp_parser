@@ -1,6 +1,40 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
+/* 获取 表达式长度 */
+/* 表达式可能是: [30002 ] 或 [      0 ] 或 [ 30004 ] 或 [      1] */
+int get_and_or_opr_len(char *in, int ilen, char **out, int *olen)
+{
+    int i;
+    char *start = NULL;
+    char *pos = in;
+
+    if (in == NULL || out == NULL || ilen == 0 || olen == NULL) {
+        return -1;
+    }
+
+    for (i = 0; i < ilen; i++) {
+
+        if (start == NULL && *(pos + i) != ' ') {
+           start = pos + i;
+           *olen = 1;
+           continue;
+        }
+
+        if (start != NULL) {
+            if (*(pos + i) == ' ' || *(pos + i) == '&' || *(pos + i) == '|') {
+                break;
+            }
+            *olen += 1;
+        }
+    }
+
+    *out = start;
+
+    return 0;
+}
 
 /* 获取 表达式长度 */
 int get_not_opr_len(char *in, int ilen, char **out)
@@ -62,52 +96,65 @@ static int get_result_by_rule(const char *rule_id, int len)
     return id;
 }
 
+/* @data: "30002 &      0 | 30004 & 30005 |      1" */
 int process_and_or_opr(char *data, int dlen)
 {
-    int rule_id = 0, i = 0, mmb_len = 0;
-    char *opr;
+    int i, olen = 0;
     char *pos = data;
-    char mmb[BUFSIZ] = {0};
-    char *start = NULL;
+    char *start = data;
     char *out = NULL;
-    int rule_result = 0;
 
-    if (data == NULL || dlen == 0) {
+    fprintf(stderr, "%s:%d\n", __func__, __LINE__);
+
+    if (data == NULL  || dlen <= 0) {
+        fprintf(stderr, "ERROR: %s:%d\n", __func__, __LINE__);
         return -1;
     }
 
-    fprintf(stderr, "%s:%d data:[%s] dlen:[%d]\n", __func__, __LINE__, data, dlen);
+    start = data;
+    for (i = 0; i < dlen && (start < data + dlen); i++) {
+        /* get opr */
+        if (*(pos + i) == '&' || *(pos + i) == '|') {
+            /* find pre exp */
+            /* 表达式可能是: [30002 ] 或 [      0 ] 或 [ 30004 ] 或 [      1] */
+            get_and_or_opr_len(start, dlen - i, &out, &olen);
 
-    /* calculate ! */
-    for (i = 0; i < dlen; i++) {
-        /* 先计算 ! 的表达式 */
-        if (*(pos + i) != '!') {
-            continue;
+            /* olen == 1 : [      1] */
+            if (olen > 1) {
+                 
+            }
+
+            fprintf(stderr, "start:[%s] ilen:[%d] out:[%.*s]\n", start , dlen - i, olen, out);
+            start = pos + i + 1;
+            fprintf(stderr, "start_new:[%s]\n", start);
         }
-
-        if (*(pos + i) == ' ') {
-            continue;
-        }
-
-        /* i是最后一个字符 */
-        if (i == dlen - 1) {
-            continue;
-        }
-
-        start = pos + i;
-        out = NULL;
-        mmb_len = get_not_opr_len(start, dlen - i, &out);
-
-        if (mmb_len > 0) {
-            memset(mmb, 0, sizeof(mmb));
-            memcpy(mmb, out, mmb_len);
-
-            rule_result = get_result_by_rule(mmb, mmb_len);
-            fprintf(stderr, "mmb_len:[%d] mmb:[%s] pos:[%s] rc:[%d]\n", mmb_len, mmb, start, rule_result);
-        }
-
-
     }
+
+    return 0;
+}
+
+int replace_result(char *in, int ilen, char *start)
+{
+    char *mmb = NULL;
+    char mmb_id[64] = {0};
+    int rule_result;
+
+    if (in == NULL || ilen == 0 || strlen(in) == 0) {
+        return -1;
+    }
+
+    if ((mmb = malloc(ilen)) == NULL) {
+        return -1;
+    }
+    memset(mmb, 0, sizeof(mmb));
+    memcpy(mmb, in, ilen);
+
+    /* 将源字符串替换成结果字符串 */
+    rule_result = get_result_by_rule(mmb, ilen);
+    snprintf(mmb_id, sizeof(mmb_id) - 1, "%*d", ilen + 1, !rule_result);
+    memcpy(start, mmb_id, ilen + (in - start));
+
+    free(mmb);
 
     return 0;
 }
@@ -150,22 +197,9 @@ int process_not_opr(char *data, int dlen)
         start = pos + i;
         out = NULL;
         mmb_len = get_not_opr_len(start, dlen - i, &out);
-
         if (mmb_len > 0) {
-            memset(mmb, 0, sizeof(mmb));
-            memcpy(mmb, out, mmb_len);
-
-            /* 将源字符串替换成结果字符串 */
-            char mmb_id[512] = {0};
-            rule_result = get_result_by_rule(mmb, mmb_len);
-
-            snprintf(mmb_id, sizeof(mmb_id) - 1, "%*d", mmb_len + 1, !rule_result);
-
-            printf("mmb:[%s]\n", mmb);
             printf("before data:[%s]\n", data);
-
-            memcpy(start, mmb_id, mmb_len + (out - start));
-
+            replace_result(out, mmb_len, start);
             printf("after  data:[%s]\n", data);
         }
     }
