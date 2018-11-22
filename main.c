@@ -96,44 +96,8 @@ static int get_result_by_rule(const char *rule_id, int len)
     return id;
 }
 
-/* @data: "30002 &      0 | 30004 & 30005 |      1" */
-int process_and_or_opr(char *data, int dlen)
-{
-    int i, olen = 0;
-    char *pos = data;
-    char *start = data;
-    char *out = NULL;
-
-    fprintf(stderr, "%s:%d\n", __func__, __LINE__);
-
-    if (data == NULL  || dlen <= 0) {
-        fprintf(stderr, "ERROR: %s:%d\n", __func__, __LINE__);
-        return -1;
-    }
-
-    start = data;
-    for (i = 0; i < dlen && (start < data + dlen); i++) {
-        /* get opr */
-        if (*(pos + i) == '&' || *(pos + i) == '|') {
-            /* find pre exp */
-            /* 表达式可能是: [30002 ] 或 [      0 ] 或 [ 30004 ] 或 [      1] */
-            get_and_or_opr_len(start, dlen - i, &out, &olen);
-
-            /* olen == 1 : [      1] */
-            if (olen > 1) {
-                 
-            }
-
-            fprintf(stderr, "start:[%s] ilen:[%d] out:[%.*s]\n", start , dlen - i, olen, out);
-            start = pos + i + 1;
-            fprintf(stderr, "start_new:[%s]\n", start);
-        }
-    }
-
-    return 0;
-}
-
-int replace_result(char *in, int ilen, char *start)
+/* 将源字符串替换成结果字符串 */
+static int replace_result(char *in, int ilen, char *start, int is_not, int offset)
 {
     char *mmb = NULL;
     char mmb_id[64] = {0};
@@ -149,16 +113,65 @@ int replace_result(char *in, int ilen, char *start)
     memset(mmb, 0, sizeof(mmb));
     memcpy(mmb, in, ilen);
 
-    /* 将源字符串替换成结果字符串 */
     rule_result = get_result_by_rule(mmb, ilen);
-    snprintf(mmb_id, sizeof(mmb_id) - 1, "%*d", ilen + 1, !rule_result);
-    memcpy(start, mmb_id, ilen + (in - start));
+
+    if (is_not) {
+        /* start = !30002 */
+        /* ilen + ! + offset */
+        snprintf(mmb_id, sizeof(mmb_id) - 1, "%*d", ilen + offset, !rule_result);
+    } else {
+        /* start =[ 30001 ]*/
+        /* ilen + offset */
+        snprintf(mmb_id, sizeof(mmb_id) - 1, "%*d", ilen + offset, rule_result);
+    }
+
+    memcpy(start, mmb_id, ilen + offset);
 
     free(mmb);
 
     return 0;
 }
 
+
+/* @data: "30002 &      0 | 30004 & 30005 |      1" */
+int process_and_or_opr(char *data, int dlen)
+{
+    int i, olen = 0;
+    char *pos = data;
+    char *start = data;
+    char *out = NULL;
+
+    if (data == NULL  || dlen <= 0) {
+        fprintf(stderr, "ERROR: %s:%d\n", __func__, __LINE__);
+        return -1;
+    }
+
+    start = data;
+    for (i = 0; i < dlen && (start < data + dlen); i++) {
+        /* get opr */
+        if (*(pos + i) == '&' || *(pos + i) == '|') {
+            /* find pre exp */
+            /* 表达式可能是: [30002 ] 或 [      0 ] 或 [ 30004 ] 或 [      1] */
+            get_and_or_opr_len(start, dlen - i, &out, &olen);
+
+
+            fprintf(stderr, "%s:%d before repalce:[%s]\n", __func__, __LINE__,  data);
+            fprintf(stderr, "out [%s] olen:[%d]\n", out, olen);
+            /* olen == 1 : [      1] */
+            if (olen > 1) {
+                replace_result(out, olen, start, 0, out - start);
+            }
+
+            fprintf(stderr, "%s:%d after repalce:[%s]\n\n", __func__, __LINE__, data);
+            //fprintf(stderr, "start:[%s] ilen:[%d] out:[%.*s]\n", start , dlen - i, olen, out);
+            //fprintf(stderr, "start_new:[%s]\n", start);
+
+            start = pos + i + 1;
+        }
+    }
+
+    return 0;
+}
 int process_not_opr(char *data, int dlen)
 {
     int rule_id;
@@ -198,7 +211,7 @@ int process_not_opr(char *data, int dlen)
         olen = get_not_opr_len(start, dlen - i, &out);
         if (olen > 0) {
             printf("before data:[%s]\n", data);
-            replace_result(out, olen, start);
+            replace_result(out, olen, start, 1, out - start);
             printf("after  data:[%s]\n", data);
         }
     }
@@ -208,7 +221,7 @@ int process_not_opr(char *data, int dlen)
 
 int main()
 {
-    char data[1024] = "30002 & !30003 | 30004 & 30005 | !30006";
+    char data[1024] = "30002 & ! 30003 | 30004 & 30005 | !30006";
    // "!30001 | 30004 & 30005 | ! 30006 & 30003 | ! 30002";
 
     /* process not opr */
