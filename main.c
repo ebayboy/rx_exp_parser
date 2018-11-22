@@ -164,8 +164,7 @@ int process_not_opr(char *data, int dlen)
     int rule_id;
     char *opr;
     int i;
-    char mmb[BUFSIZ] = {0};
-    int mmb_len = 0;
+    int olen = 0;
 
     char *pos = data;
     char *start = NULL;
@@ -196,10 +195,10 @@ int process_not_opr(char *data, int dlen)
 
         start = pos + i;
         out = NULL;
-        mmb_len = get_not_opr_len(start, dlen - i, &out);
-        if (mmb_len > 0) {
+        olen = get_not_opr_len(start, dlen - i, &out);
+        if (olen > 0) {
             printf("before data:[%s]\n", data);
-            replace_result(out, mmb_len, start);
+            replace_result(out, olen, start);
             printf("after  data:[%s]\n", data);
         }
     }
