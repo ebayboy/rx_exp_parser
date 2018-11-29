@@ -10,7 +10,7 @@ DEBUG = -g -ggdb
 CFLAGS = -lstdc++ -lm
 
 app: 
-	$(CC) $(CFLAGS) $(DEBUG) main.c $(INCL) $(LIB_NAME) -o $(EXE)
+	$(CC) $(CFLAGS) $(DEBUG) main.c exp_parser.c $(INCL) $(LIB_NAME) -o $(EXE)
 
 clean:
 	rm -rf $(EXE)
