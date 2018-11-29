@@ -218,7 +218,7 @@ int process_not_opr(char *data, int dlen)
 }
 
 
-/* 
+/* 计算与 和 或表达式结果
  * @data: [    0 &       0 |     0 &     1 |      1] or  [  1 ]
  * @dlen:  data length
  * */
@@ -269,8 +269,7 @@ int process_and_or_opt_result(char *data, int dlen)
                 return -1;
             }
 
-            fprintf(stderr, "opr:[%c] exp1:[%c] exp2:[%c]  sum:[%d]\n", 
-                    *opr, *exp1, *exp2);
+            fprintf(stderr, "opr:[%c] exp1:[%c] exp2:[%c]  sum:[%d]\n", *opr, *exp1, *exp2, sum);
         }
     }
 
@@ -288,10 +287,7 @@ int main()
     /* process 'and opr' && 'or opt' */
     process_and_or_opr(data, strlen(data));
 
-#if 0
-    /* 计算与或表达式结果 */
     process_and_or_opt_result(data, strlen(data));
-#endif
 
     return 0;
 }
