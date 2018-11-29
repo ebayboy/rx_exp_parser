@@ -162,7 +162,7 @@ int process_and_or_opr(char *data, int dlen)
                 replace_result(out, olen, start, 0, out - start);
             }
 
-            fprintf(stderr, "%s:%d after repalce:[%s]\n\n", __func__, __LINE__, data);
+            fprintf(stderr, "%s:%d after repalce:[%s] len:[%d]\n\n", __func__, __LINE__, data, strlen(data));
 
             start = pos + i + 1;
         }
@@ -288,8 +288,10 @@ int main()
     /* process 'and opr' && 'or opt' */
     process_and_or_opr(data, strlen(data));
 
-
+#if 0
+    /* 计算与或表达式结果 */
     process_and_or_opt_result(data, strlen(data));
+#endif
 
     return 0;
 }
