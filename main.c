@@ -163,8 +163,6 @@ int process_and_or_opr(char *data, int dlen)
             }
 
             fprintf(stderr, "%s:%d after repalce:[%s]\n\n", __func__, __LINE__, data);
-            //fprintf(stderr, "start:[%s] ilen:[%d] out:[%.*s]\n", start , dlen - i, olen, out);
-            //fprintf(stderr, "start_new:[%s]\n", start);
 
             start = pos + i + 1;
         }
@@ -219,6 +217,66 @@ int process_not_opr(char *data, int dlen)
     return 0;
 }
 
+
+/* 
+ * @data: [    0 &       0 |     0 &     1 |      1] or  [  1 ]
+ * @dlen:  data length
+ * */
+int process_and_or_opt_result(char *data, int dlen)
+{
+    int i, j, k;
+    int sum = 0;
+    int exist_opr = 0;
+
+    char *pos = data;
+    char *opr = NULL;
+    char *exp1, *exp2;
+
+    for (i = 0 ; i < dlen; i++) {
+        if (*(pos + i) == '&' || *(pos + i) == '|') {
+            exist_opr = 1;
+            break;
+        }
+    }
+
+    if (!exist_opr) {
+        /* [  1  ] */
+        return atoi(data);
+    }
+
+    /* [    0 &       0 |     0 &     1 |      1] */
+    for (i = 0 ; i < dlen; i++) {
+        if (*(pos + i) == '&' || *(pos + i) == '|') {
+            /* find opr */
+            opr = pos + i;
+
+            exp1 = exp2 = NULL;
+            /* find exp1 */
+            for (j = i; j >= 0; j--) {
+                if (*(pos + j) != ' ' && *(pos + j) != '&' && *(pos + j) != '|') {
+                    exp1 = pos + j;
+                }
+            }
+
+            /* find exp2 */
+            for (k = i; k < dlen; k++) {
+                if (*(pos + k) != ' ' && *(pos + k) != '&' && *(pos + k) != '|') {
+                    exp2 = pos + k;
+                }
+            }
+
+            if (opr == NULL || exp1 == NULL || exp2 == NULL) {
+                return -1;
+            }
+
+            fprintf(stderr, "opr:[%c] exp1:[%c] exp2:[%c]  sum:[%d]\n", 
+                    *opr, *exp1, *exp2);
+        }
+    }
+
+    return 0;
+}
+
 int main()
 {
     char data[1024] = "30002 & ! 30003 | 30004 & 30005 | !30006";
@@ -229,6 +287,9 @@ int main()
 
     /* process 'and opr' && 'or opt' */
     process_and_or_opr(data, strlen(data));
+
+
+    process_and_or_opt_result(data, strlen(data));
 
     return 0;
 }
