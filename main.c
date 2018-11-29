@@ -217,20 +217,35 @@ int process_not_opr(char *data, int dlen)
     return 0;
 }
 
+static get_exps_result(int exp1, int exp2, char opt)
+{
+    if (opt == '&') {
+        return exp1 & exp2;
+    } else if (opt == '|') {
+        return exp1 | exp2;
+    } else {
+        return -1;
+    }
+
+    return 0;
+}
 
 /* 计算与 和 或表达式结果
- * @data: [    0 &       0 |     0 &     1 |      1] or  [  1 ]
+ * in-out @data: [    0 &       0 |     0 &     1 |      1] or  [  1 ]
  * @dlen:  data length
+ * RETURN: [ 0 ]
  * */
 int process_and_or_opt_result(char *data, int dlen)
 {
     int i, j, k;
-    int sum = 0;
+    int sum = 1;
     int exist_opr = 0;
 
     char *pos = data;
     char *opr = NULL;
     char *exp1, *exp2;
+    int opts_count = 0;
+    int exp1_num, exp2_num;
 
     for (i = 0 ; i < dlen; i++) {
         if (*(pos + i) == '&' || *(pos + i) == '|') {
@@ -241,36 +256,59 @@ int process_and_or_opt_result(char *data, int dlen)
 
     if (!exist_opr) {
         /* [  1  ] */
-        return atoi(data);
+        /* 不存在 & | 操作符， 直接返回表达式 */
+        return 0;
     }
 
     /* [    0 &       0 |     0 &     1 |      1] */
     for (i = 0 ; i < dlen; i++) {
         if (*(pos + i) == '&' || *(pos + i) == '|') {
+            opts_count++;
+
             /* find opr */
             opr = pos + i;
 
             exp1 = exp2 = NULL;
-            /* find exp1 */
-            for (j = i; j >= 0; j--) {
-                if (*(pos + j) != ' ' && *(pos + j) != '&' && *(pos + j) != '|') {
-                    exp1 = pos + j;
+            exp1_num = exp2_num = 0;
+            if (opts_count == 1) {
+                /* find exp1 */
+                for (j = i; j >= 0; j--) {
+                    if (*(pos + j) != ' ' && *(pos + j) != '&' && *(pos + j) != '|') {
+                        exp1 = pos + j;
+                        exp1_num = *exp1 - '0';
+                    }
                 }
+            } else {
+                exp1_num = sum;
             }
 
             /* find exp2 */
             for (k = i; k < dlen; k++) {
                 if (*(pos + k) != ' ' && *(pos + k) != '&' && *(pos + k) != '|') {
                     exp2 = pos + k;
+                    exp2_num = *exp2 - '0';
+                    break;
                 }
             }
 
-            if (opr == NULL || exp1 == NULL || exp2 == NULL) {
-                return -1;
+            if (exp2 == NULL) {
+                continue;
             }
 
-            fprintf(stderr, "opr:[%c] exp1:[%c] exp2:[%c]  sum:[%d]\n", *opr, *exp1, *exp2, sum);
+            sum = get_exps_result(exp1_num, exp2_num, *opr);
+
+            fprintf(stderr, "opr:[%c] exp1_num:[%d] exp2_num:[%d] sum:[%d]\n", 
+                    *opr, exp1_num, exp2_num, sum);
         }
+    }
+
+    /* 生成新的表达式 */
+    /* data:[1                                       ] */
+    memset(data, ' ', dlen);
+    if (sum == 0) {
+        data[0]  = '0';
+    } else {
+        data[0]  = '1';
     }
 
     return 0;
@@ -279,7 +317,7 @@ int process_and_or_opt_result(char *data, int dlen)
 int main()
 {
     char data[1024] = "30002 & ! 30003 | 30004 & 30005 | !30006";
-   // "!30001 | 30004 & 30005 | ! 30006 & 30003 | ! 30002";
+    int dlen = strlen(data);
 
     /* process not opr */
     process_not_opr(data, strlen(data));
@@ -287,7 +325,9 @@ int main()
     /* process 'and opr' && 'or opt' */
     process_and_or_opr(data, strlen(data));
 
-    process_and_or_opt_result(data, strlen(data));
+    process_and_or_opt_result(data, dlen);
+
+    fprintf(stderr, "data:[%.*s]\n", dlen, data);
 
     return 0;
 }
