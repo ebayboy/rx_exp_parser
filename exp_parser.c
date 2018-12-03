@@ -131,7 +131,11 @@ static int replace_result(char *in, int ilen, char *start, int is_not, int offse
     return 0;
 }
 
-/* @data: "30002 &      0 | 30004 & 30005 |      1" */
+/** 
+ * @data-in: "30002 &      0 | 30004 & 30005 |      1" 
+   @data-out: "0 &      0 | 0 & 1 |      1" 
+ **/
+
 static  int process_and_or_opr(char *data, int dlen)
 {
     int i, olen = 0;
@@ -152,9 +156,7 @@ static  int process_and_or_opr(char *data, int dlen)
             /* 表达式可能是: [30002 ] 或 [      0 ] 或 [ 30004 ] 或 [      1] */
             get_and_or_opr_len(start, dlen - i, &out, &olen);
 
-
             fprintf(stderr, "%s:%d before repalce:[%s]\n", __func__, __LINE__,  data);
-            fprintf(stderr, "out [%s] olen:[%d]\n", out, olen);
             /* olen == 1 : [      1] */
             if (olen > 1) {
                 replace_result(out, olen, start, 0, out - start);
@@ -165,6 +167,15 @@ static  int process_and_or_opr(char *data, int dlen)
             start = pos + i + 1;
         }
     }
+
+    /* 只有一个表达式的时候， 或者多个表达式替换最后一个表达式 */
+    fprintf(stderr, "%s:%d before repalce:[%s]\n", __func__, __LINE__,  data);
+    get_and_or_opr_len(start, data + dlen - start, &out, &olen);
+    /* olen == 1 : [      1] */
+    if (olen > 1) {
+        replace_result(out, olen, start, 0, out - start);
+    }
+    fprintf(stderr, "%s:%d after repalce:[%s] len:[%d]\n\n", __func__, __LINE__, data, strlen(data));
 
     return 0;
 }
